@@ -1,7 +1,7 @@
 """The Glassbox terminal backend: a macOS Seatbelt environment for Hermes.
 
 Hermes talks to a terminal backend through a small duck-typed object. We subclass
-``LocalEnvironment`` to inherit its process/timeout/CWD plumbing, but spawn every
+``BaseEnvironment`` to inherit its process/timeout/CWD plumbing, but spawn every
 command under ``sandbox-exec`` with a generated profile and a filtered environment.
 """
 

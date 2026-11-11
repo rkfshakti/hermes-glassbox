@@ -13,7 +13,7 @@ author: rkfshakti
 license: MIT
 homepage: https://github.com/rkfshakti/hermes-glassbox
 tags: [security, sandbox, macos, terminal, seatbelt, audit]
-requires_hermes: ">=0.22.2"
+requires_hermes: ">=0.22.3"
 provides_tools:
   - glassbox_report
   - glassbox_policy
