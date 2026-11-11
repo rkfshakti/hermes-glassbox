@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Glassbox report</title>
+<style>
+:root { color-scheme: dark; --bg:#0b0f14; --panel:#111821; --line:#233041; --text:#e6edf3;
+        --muted:#8b98a9; --green:#3fb950; --red:#f85149; --amber:#d29922; --blue:#58a6ff; }
+* { box-sizing:border-box; }
+body { margin:0; background:radial-gradient(circle at 20% -10%,#17263a 0,var(--bg) 45%);
+        color:var(--text); font:14px/1.5 -apple-system,BlinkMacSystemFont,"SF Mono",Menlo,monospace; }
+main { max-width:1100px; margin:0 auto; padding:48px 24px 80px; }
+h1 { font-size:30px; letter-spacing:-.03em; margin:0 0 4px; }
+h1 span { color:var(--blue); }
+.sub { color:var(--muted); margin-bottom:32px; }
+.stats { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin:24px 0 32px; }
+.stat,.card { background:linear-gradient(180deg,#141c26,#10161e); border:1px solid var(--line);
+               border-radius:12px; padding:16px; }
+.stat .n { font-size:30px; font-weight:700; letter-spacing:-.04em; }
+.stat .l { color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:.08em; }
+.cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:12px; }
+.card .big { color:var(--red); font-size:22px; font-weight:700; }
+.card .path { margin:4px 0; word-break:break-all; }
+.muted { color:var(--muted); font-size:12px; }
+.empty { color:var(--green); background:var(--panel); border:1px solid var(--line);
+          border-radius:12px; padding:20px; }
+table { width:100%; border-collapse:collapse; margin-top:28px; background:var(--panel);
+         border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+th { text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.08em;
+      color:var(--muted); padding:12px 14px; border-bottom:1px solid var(--line); }
+td { padding:11px 14px; border-bottom:1px solid #1a2431; vertical-align:top; }
+tr:last-child td { border-bottom:0; }
+code { font:12px/1.45 "SF Mono",Menlo,monospace; color:#c9d1d9; word-break:break-word; }
+.status { font-size:16px; }
+.status.blocked { color:var(--red); }
+.status.allowed { color:var(--green); }
+.num { color:var(--muted); text-align:right; white-space:nowrap; }
+footer { color:var(--muted); margin-top:28px; font-size:12px; }
+@media (max-width:720px) { .stats { grid-template-columns:repeat(2,1fr); } main { padding:24px 14px; } }
+</style></head><body><main>
+<h1>Hermes <span>Glassbox</span></h1>
+<div class="sub">Containment audit · generated 2026-11-11T11:52:52+00:00</div>
+<div class="stats">
+  <div class="stat"><div class="n">9</div><div class="l">Commands</div></div>
+  <div class="stat"><div class="n" style="color:var(--red)">5</div><div class="l">Blocked</div></div>
+  <div class="stat"><div class="n" style="color:var(--amber)">1</div><div class="l">Network blocks</div></div>
+  <div class="stat"><div class="n" style="color:var(--blue)">1</div><div class="l">Sessions</div></div>
+</div>
+<h2>Blocked attempts</h2>
+<div class="cards"><div class="card"><div class="big">2×</div><div class="path">/Users/alex/.ssh/id_rsa</div><div class="muted">bash -c &#x27;cat /Users/alex/.ssh/id_rsa&#x27;</div></div><div class="card"><div class="big">1×</div><div class="path">/Users/alex/.aws/credentials</div><div class="muted">sed -n &#x27;1,40p&#x27; /Users/alex/.aws/credentials</div></div><div class="card"><div class="big">1×</div><div class="path">/Users/alex/Documents/report.txt</div><div class="muted">printf nope &gt; /Users/alex/Documents/report.txt</div></div><div class="card"><div class="big">1×</div><div class="path">network</div><div class="muted">curl -sS https://example.com -o /dev/null</div></div></div>
+<h2 style="margin-top:36px">Timeline</h2>
+<table><thead><tr><th></th><th>Command</th><th>Blocked path</th><th>Exit</th><th>Duration</th><th>When</th></tr></thead>
+<tbody><tr><td class="status allowed">✓</td><td><code>git status --short</code></td><td>—</td><td class="num">0</td><td class="num">61 ms</td><td>2026-11-11 22:50:10</td></tr><tr><td class="status blocked">⛔</td><td><code>bash -c &#x27;cat /Users/alex/.ssh/id_rsa&#x27;</code></td><td>/Users/alex/.ssh/id_rsa</td><td class="num">1</td><td class="num">33 ms</td><td>2026-11-11 22:50:09</td></tr><tr><td class="status blocked">⛔</td><td><code>printf nope &gt; /Users/alex/Documents/report.txt</code></td><td>/Users/alex/Documents/report.txt</td><td class="num">1</td><td class="num">24 ms</td><td>2026-11-11 22:50:08</td></tr><tr><td class="status allowed">✓</td><td><code>npm test</code></td><td>—</td><td class="num">0</td><td class="num">1840 ms</td><td>2026-11-11 22:50:06</td></tr><tr><td class="status blocked">⛔</td><td><code>sed -n &#x27;1,40p&#x27; /Users/alex/.aws/credentials</code></td><td>/Users/alex/.aws/credentials</td><td class="num">1</td><td class="num">27 ms</td><td>2026-11-11 22:50:05</td></tr><tr><td class="status blocked">⛔</td><td><code>curl -sS https://example.com -o /dev/null</code></td><td>network</td><td class="num">6</td><td class="num">29 ms</td><td>2026-11-11 22:50:04</td></tr><tr><td class="status blocked">⛔</td><td><code>cat /Users/alex/.ssh/id_rsa</code></td><td>/Users/alex/.ssh/id_rsa</td><td class="num">1</td><td class="num">31 ms</td><td>2026-11-11 22:50:03</td></tr><tr><td class="status allowed">✓</td><td><code>printf &#x27;hello&#x27; &gt; notes.txt</code></td><td>—</td><td class="num">0</td><td class="num">42 ms</td><td>2026-11-11 22:50:02</td></tr><tr><td class="status allowed">✓</td><td><code>pwd</code></td><td>—</td><td class="num">0</td><td class="num">38 ms</td><td>2026-11-11 22:50:01</td></tr></tbody></table>
+<footer>Glassbox is a macOS Seatbelt sandbox. Denials are kernel-enforced; the audit is local and never leaves this machine.</footer>
+</main></body></html>

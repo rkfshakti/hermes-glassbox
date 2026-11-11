@@ -1,0 +1,15 @@
+[project]
+name = "hermes-glassbox"
+version = "1.0.0"
+description = "Contained, auditable macOS Seatbelt terminal backend for Hermes Agent"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "rkfshakti" }]
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/rkfshakti/hermes-glassbox"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"

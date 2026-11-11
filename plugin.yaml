@@ -1,0 +1,61 @@
+name: glassbox
+version: 1.0.0
+manifest_version: 2
+api_version: 1
+kind: backend
+description: >-
+  A contained, auditable macOS terminal backend. Every terminal and file-tool command
+  runs under a generated Seatbelt profile: the system stays readable, the workspace is
+  writable, the rest of the user's home is hidden, and network access is off by default.
+  Blocked filesystem and network attempts are recorded in a local audit log, with
+  `hermes glassbox report` and a self-contained HTML timeline.
+author: rkfshakti
+license: MIT
+homepage: https://github.com/rkfshakti/hermes-glassbox
+tags: [security, sandbox, macos, terminal, seatbelt, audit]
+requires_hermes: ">=0.22.2"
+provides_tools:
+  - glassbox_report
+  - glassbox_policy
+  - glassbox_verify
+provides_hooks:
+  - pre_tool_call
+config_schema:
+  network:
+    type: bool
+    default: false
+    label: Allow network access
+    description: When off, sandboxed commands have no network (the default).
+  allow_home:
+    type: bool
+    default: false
+    label: Allow reading the home directory
+    description: >-
+      When off, only the workspace is visible. When on, the home directory becomes
+      readable, but credential stores (.ssh, .aws, .hermes, keychains, browser profiles)
+      stay denied.
+  workspace_writable:
+    type: bool
+    default: true
+    label: Workspace writable
+    description: Turn off for a read-only analysis session; the private scratch area stays writable.
+  read_paths:
+    type: list
+    default: []
+    label: Extra readable paths
+    description: Absolute paths (or ~/...) to allow in addition to the workspace.
+  write_paths:
+    type: list
+    default: []
+    label: Extra writable paths
+    description: Absolute paths (or ~/...) the agent may write outside the workspace.
+  deny_paths:
+    type: list
+    default: []
+    label: Extra denied paths
+    description: Absolute paths (or ~/...) to deny even when they are inside an allowed root.
+  audit:
+    type: bool
+    default: true
+    label: Record the audit log
+    description: Store command metadata and blocked paths under the plugin data directory.

@@ -1,0 +1,25 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  macos:
+    # Glassbox is a macOS Seatbelt plugin; policy/audit/preflight unit tests run
+    # everywhere, and the live sandbox tests self-skip when Hermes is not installed.
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run tests
+        run: |
+          python -m pip install --quiet pytest
+          python -m pytest -q
+      - name: Validate plugin manifest
+        run: |
+          python -m pip install --quiet hermes-agent || true
+          hermes plugins validate . || echo "hermes-agent not installable in CI; local validation is authoritative"
