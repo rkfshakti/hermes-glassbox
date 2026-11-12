@@ -15,8 +15,6 @@ from typing import Any, Callable
 
 from .audit import AuditLog, render_html, render_text, summarize
 from .policy import build_policy
-from .provider import GlassboxEnvironment, SANDBOX_EXEC, resolve_workspace
-from .verify import checks_ok, run_checks
 
 _ANSI = sys.stdout.isatty() and not os.environ.get("NO_COLOR")
 
@@ -113,6 +111,8 @@ def _last_line(text: str, limit: int = 160) -> str:
 
 
 def _status_payload() -> dict[str, Any]:
+    from .provider import SANDBOX_EXEC
+
     audit = AuditLog(data_dir(), enabled=True)
     entries = audit.read(limit=0)
     summary = summarize(entries)
@@ -139,7 +139,7 @@ def _cmd_status(args: argparse.Namespace) -> int:
     print(_bold("Glassbox"))
     print("────────")
     print(f"  Platform       {payload['platform']}")
-    print(f"  Seatbelt       {SANDBOX_EXEC} {'✓' if payload['sandbox_exec_present'] else '✗'}")
+    print(f"  Seatbelt       {payload['sandbox_exec']} {'✓' if payload['sandbox_exec_present'] else '✗'}")
     print(f"  Plugin         {'enabled' if payload['plugin_enabled'] else 'not enabled'}")
     backend = payload["active_backend"] or "(unset)"
     marker = "✓" if backend == "glassbox" else "•"
@@ -157,6 +157,8 @@ def _cmd_status(args: argparse.Namespace) -> int:
 
 
 def _cmd_verify(args: argparse.Namespace) -> int:
+    from .verify import checks_ok, run_checks
+
     checks = run_checks(data_dir=data_dir(), settings=settings())
     ok = checks_ok(checks)
     if getattr(args, "json", False):
@@ -206,6 +208,8 @@ def _cmd_report(args: argparse.Namespace) -> int:
 
 
 def _cmd_profile(args: argparse.Namespace) -> int:
+    from .provider import resolve_workspace
+
     workspace = resolve_workspace(args.cwd or os.getcwd())
     if workspace is None:
         print(
@@ -234,6 +238,8 @@ def _cmd_clear(args: argparse.Namespace) -> int:
 
 
 def _cmd_demo(args: argparse.Namespace) -> int:
+    from .provider import GlassboxEnvironment
+
     data = data_dir()
     workspace = Path(tempfile.mkdtemp(prefix="glassbox-demo-"))
     home = Path.home()
