@@ -11,14 +11,31 @@ import tempfile
 import time
 import uuid
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any, Callable
 
 from .audit import AuditLog, render_html, render_text, summarize
 from .policy import build_policy
-from .provider import GlassboxEnvironment, SANDBOX_EXEC
+from .provider import GlassboxEnvironment, SANDBOX_EXEC, resolve_workspace
 from .verify import checks_ok, run_checks
 
 _ANSI = sys.stdout.isatty() and not os.environ.get("NO_COLOR")
+
+_CONFIG_GETTER: Callable[[str, Any], Any] | None = None
+_SETTINGS_DEFAULTS = {
+    "network": False,
+    "allow_home": False,
+    "workspace_writable": True,
+    "read_paths": [],
+    "write_paths": [],
+    "deny_paths": [],
+    "audit": True,
+}
+
+
+def set_config_getter(getter: Callable[[str, Any], Any]) -> None:
+    """Use the plugin API's ``ctx.get_config`` instead of a private core reader."""
+    global _CONFIG_GETTER
+    _CONFIG_GETTER = getter
 
 
 def _c(code: str, text: str) -> str:
@@ -52,15 +69,19 @@ def data_dir() -> Path:
 
 
 def settings() -> dict[str, Any]:
-    """Read this plugin's settings without requiring the plugin to be active."""
-    try:
-        from hermes_cli.config import load_config_readonly
-
-        config = load_config_readonly() or {}
-        entries = (config.get("plugins") or {}).get("entries") or {}
-        return dict((entries.get("glassbox") or {}).get("settings") or {})
-    except Exception:
+    """Read this plugin's settings through the public ``ctx.get_config`` seam."""
+    getter = _CONFIG_GETTER
+    if getter is None:
         return {}
+    data: dict[str, Any] = {}
+    for key, default in _SETTINGS_DEFAULTS.items():
+        try:
+            value = getter(key, default)
+        except Exception:
+            continue
+        if value is not None:
+            data[key] = value
+    return data
 
 
 def active_backend() -> str:
@@ -185,7 +206,15 @@ def _cmd_report(args: argparse.Namespace) -> int:
 
 
 def _cmd_profile(args: argparse.Namespace) -> int:
-    built = build_policy(args.cwd or os.getcwd(), settings(), scratch=data_dir() / "policy-preview")
+    workspace = resolve_workspace(args.cwd or os.getcwd())
+    if workspace is None:
+        print(
+            "Glassbox: that path is the home directory or a system root; "
+            "showing a preview with an empty workspace.",
+            file=sys.stderr,
+        )
+        workspace = data_dir() / "policy-preview"
+    built = build_policy(workspace, settings(), scratch=data_dir() / "policy-preview")
     if getattr(args, "json", False):
         print(json.dumps(built.as_dict(), indent=2))
         return 0

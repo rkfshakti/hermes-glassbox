@@ -45,7 +45,7 @@ def _prune_stale_sandboxes(root: Path, max_age_hours: float = 24.0) -> None:
 def _slash(raw_args: str, **kwargs) -> str:
     """Handle ``/glassbox [status|verify|report|profile]`` inside a session."""
     from .audit import AuditLog, render_text
-    from .cli import data_dir as _data_dir, settings as read_settings
+    from .cli import active_backend, data_dir as _data_dir, settings as read_settings
     from .policy import build_policy
     from .verify import checks_ok, run_checks
 
@@ -56,13 +56,7 @@ def _slash(raw_args: str, **kwargs) -> str:
     sub = (parts[0] if parts else "status").lower()
     data = _data_dir()
     if sub == "status":
-        backend = ""
-        try:
-            from hermes_cli.config import load_config_readonly
-
-            backend = str((((load_config_readonly() or {}).get("terminal") or {}).get("backend") or ""))
-        except Exception:
-            pass
+        backend = active_backend()
         audit = AuditLog(data, enabled=True)
         entries = audit.read(limit=0)
         blocked = sum(1 for entry in entries if entry.get("denied_paths") or entry.get("network_denied"))
@@ -96,11 +90,13 @@ def register(ctx) -> None:
         data_dir as _default_data_dir,
         glassbox_command,
         register_cli,
+        set_config_getter,
         settings as read_settings,
     )
     from .provider import GlassboxProvider
     from .preflight import pre_tool_call
 
+    set_config_getter(ctx.get_config)
     data = Path(_default_data_dir())
     _prune_stale_sandboxes(data)
 

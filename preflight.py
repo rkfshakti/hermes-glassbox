@@ -91,13 +91,20 @@ def pre_tool_call(tool_name: str = "", args: dict | None = None,
     """Hermes ``pre_tool_call`` hook; never raises and never approves anything."""
     try:
         from .cli import active_backend, data_dir, settings
+        from .provider import resolve_workspace
 
         backend = active_backend()
         if backend != "glassbox":
             logger.debug("Glassbox preflight skipped: backend=%r tool=%s", backend, tool_name)
             return None
+        workspace = resolve_workspace(os.getcwd())
+        if workspace is None:
+            # The environment will use a random empty scratch workspace; a policy
+            # built from ~ would disagree with the kernel. Let the kernel decide.
+            logger.debug("Glassbox preflight skipped: cwd is not a safe workspace")
+            return None
         policy = build_policy(
-            os.getcwd(),
+            workspace,
             settings(),
             scratch=data_dir() / "preflight-scratch",
         )

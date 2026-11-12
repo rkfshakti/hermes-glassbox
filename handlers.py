@@ -26,10 +26,9 @@ def _clamp(value: Any, default: int, low: int, high: int) -> int:
 
 def _active_backend() -> str:
     try:
-        from hermes_cli.config import load_config_readonly
+        from .cli import active_backend
 
-        config = load_config_readonly() or {}
-        return str(((config.get("terminal") or {}).get("backend") or "")).strip()
+        return active_backend()
     except Exception:
         return ""
 
@@ -58,12 +57,19 @@ def report(args: Mapping[str, Any], *, data_dir: Path, session_id: str = "") -> 
 
 
 def policy(args: Mapping[str, Any], *, data_dir: Path, settings: Mapping[str, Any]) -> str:
+    from .provider import resolve_workspace
+
     cwd = str(args.get("cwd") or os.getcwd())
+    workspace = resolve_workspace(cwd)
+    fallback = workspace is None
+    if fallback:
+        workspace = Path(data_dir) / "policy-preview"
     scratch = Path(data_dir) / "policy-preview"
-    built = build_policy(cwd, settings, scratch=scratch)
+    built = build_policy(workspace, settings, scratch=scratch)
     return _dumps({
         "ok": True,
         "active_backend": _active_backend(),
+        "workspace_fallback": fallback,
         "policy": built.as_dict(),
         "profile": built.render(),
     })

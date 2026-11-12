@@ -20,6 +20,12 @@ def test_default_policy_hides_home_and_network(tmp_path):
     assert '(deny file-read* (subpath "/Users")' in profile
     assert str(Path.home() / ".ssh") in profile
     assert str(Path.home() / ".hermes") in profile
+    for name in (".zshrc", ".zprofile", ".bashrc", ".bash_profile", ".profile"):
+        path = Path.home() / name
+        assert f'(deny file-write* (subpath "{path}"))' in profile
+    assert f'(deny file-write* (subpath "{Path.home() / "Library/LaunchAgents"}"))' in profile
+    assert '(deny mach-lookup (global-name "com.apple.coreservices.launchservicesd"))' in profile
+    assert '(deny mach-lookup (global-name-prefix "com.apple.lsd."))' in profile
 
 
 def test_network_and_home_are_opt_in(tmp_path):

@@ -25,6 +25,18 @@ def test_home_and_ssh_are_blocked(tmp_path):
     assert is_blocked(Path.home() / ".ssh" / "id_rsa", policy, write=True)
 
 
+def test_shell_startup_and_launch_agents_are_always_blocked(tmp_path):
+    policy = _policy(tmp_path, allow_home=True)
+    for path in (
+        Path.home() / ".zshrc",
+        Path.home() / ".bashrc",
+        Path.home() / ".profile",
+        Path.home() / "Library" / "LaunchAgents" / "com.example.plist",
+    ):
+        assert is_blocked(path, policy, write=True), path
+        assert is_blocked(path, policy, write=False), path
+
+
 def test_workspace_is_readable_and_writable(tmp_path):
     policy = _policy(tmp_path)
     file = policy.workspace / "notes.txt"

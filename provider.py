@@ -26,7 +26,6 @@ from tools.environments.base import BaseEnvironment
 from .audit import AuditLog, extract_denied_paths
 from .policy import (
     SECRET_ENV_MARKERS,
-    SandboxPolicy,
     build_policy,
     prepare_scratch,
     safe_child_env,
@@ -38,13 +37,41 @@ SANDBOX_EXEC = "/usr/bin/sandbox-exec"
 BASH = "/bin/bash"
 _BACKEND_LABEL = "glassbox"
 
-# A launch directory at a system root would turn the whole root into the writable
-# workspace. Fall back to the user's home; the secret-store deny list still applies.
+# A launch directory at a system root or a user-home directory would turn a
+# huge, sensitive tree into the writable workspace. Projects *under* a home are
+# fine; the home itself and its ancestors are not.
 _UNSAFE_WORKSPACES = frozenset({
     Path("/"), Path("/Users"), Path("/Volumes"), Path("/System"), Path("/Library"),
     Path("/Applications"), Path("/private"), Path("/usr"), Path("/bin"), Path("/sbin"),
     Path("/etc"), Path("/var"),
 })
+
+
+def _resolved(path: str | os.PathLike[str]) -> Path:
+    return Path(os.path.realpath(os.path.expanduser(str(path))))
+
+
+def _is_unsafe_workspace(path: str | os.PathLike[str]) -> bool:
+    """True for a system root, a user-home directory, or an ancestor of home."""
+    resolved = _resolved(path)
+    if resolved in _UNSAFE_WORKSPACES:
+        return True
+    home = _resolved(Path.home())
+    try:
+        home.relative_to(resolved)
+        return True
+    except ValueError:
+        pass
+    # Cover another user's home even when this process runs as someone else.
+    return resolved.parent in {Path("/Users"), Path("/home")}
+
+
+def resolve_workspace(cwd: str | os.PathLike[str] | None) -> Path | None:
+    """Return a safe workspace, or None when the caller must use a scratch dir."""
+    candidate = _resolved(cwd or os.getcwd())
+    if not candidate.is_dir() or _is_unsafe_workspace(candidate):
+        return None
+    return candidate
 
 
 def _looks_secret(name: str) -> bool:
@@ -91,13 +118,12 @@ class GlassboxEnvironment(BaseEnvironment):
     def __init__(
         self,
         *,
-        workspace: Path,
+        workspace: Path | None,
         timeout: int,
         task_id: str,
         settings: Mapping[str, Any] | None,
         data_dir: Path,
     ):
-        self.workspace = Path(workspace)
         self.task_id = task_id or "default"
         self.data_dir = Path(data_dir)
         self._settings = dict(settings or {})
@@ -109,6 +135,18 @@ class GlassboxEnvironment(BaseEnvironment):
         self.sandbox_tmp = self.run_dir / "tmp"
         prepare_scratch(self.run_dir)
 
+        requested = _resolved(workspace) if workspace is not None else None
+        self.workspace_fallback = requested is None or not requested.is_dir() or _is_unsafe_workspace(requested)
+        if self.workspace_fallback:
+            if requested is not None:
+                logger.warning(
+                    "Glassbox refused an unsafe workspace %s; using empty sandbox workspace",
+                    requested,
+                )
+            self.workspace = (self.run_dir / "workspace").resolve()
+            self.workspace.mkdir(parents=True, exist_ok=True)
+        else:
+            self.workspace = requested
         self.policy = build_policy(
             self.workspace,
             self._settings,
@@ -200,9 +238,16 @@ class GlassboxEnvironment(BaseEnvironment):
         # Hermes defaults a non-local backend to /root when no default_cwd is
         # advertised. /root does not exist on macOS, so every command would fail
         # with `cd: /root: No such file or directory`. Clamp the known placeholders
-        # to the real workspace; a genuine `cd /tmp` is left alone so the sandbox
-        # can deny it and the audit can explain why.
-        if not cwd or cwd in {"/root", "~"} or not os.path.isdir(os.path.expanduser(cwd)):
+        # and any home directory to the real workspace; a genuine `cd /tmp` is left
+        # alone so the sandbox can deny it and the audit can explain why.
+        requested = Path(os.path.expanduser(cwd)) if cwd else None
+        if (
+            not cwd
+            or cwd in {"/root", "~"}
+            or requested is None
+            or not requested.is_dir()
+            or _is_unsafe_workspace(requested)
+        ):
             cwd = str(self.workspace)
         started = time.monotonic()
         try:
@@ -254,6 +299,7 @@ class GlassboxEnvironment(BaseEnvironment):
             "profile_path": str(self.profile_path),
             "audit_path": str(self.audit.path),
             "sandbox_exec": SANDBOX_EXEC,
+            "workspace_fallback": self.workspace_fallback,
         }
 
 
@@ -346,12 +392,13 @@ class GlassboxProvider(TerminalEnvironmentProvider):
         container_config: dict[str, Any] | None = None,
         **kwargs: Any,
     ):
-        workspace = Path(os.path.expanduser(cwd or os.getcwd()))
-        if not workspace.is_absolute():
-            workspace = Path.cwd() / workspace
-        workspace = Path(os.path.realpath(str(workspace)))
-        if not workspace.is_dir() or workspace in _UNSAFE_WORKSPACES:
-            workspace = Path(os.path.realpath(str(Path.home())))
+        requested = cwd or os.getcwd()
+        workspace = resolve_workspace(requested)
+        if workspace is None:
+            logger.warning(
+                "Glassbox: %s is not a usable project directory; using an empty sandbox workspace",
+                requested,
+            )
         return GlassboxEnvironment(
             workspace=workspace,
             timeout=timeout,

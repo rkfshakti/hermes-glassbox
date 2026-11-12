@@ -58,6 +58,25 @@ def test_home_is_denied_and_audited(tmp_path):
         env.cleanup()
 
 
+def test_home_workspace_falls_back_to_an_empty_sandbox(tmp_path):
+    data = tmp_path / "data"
+    env = GlassboxEnvironment(
+        workspace=Path.home(),
+        timeout=20,
+        task_id="test-home-fallback",
+        settings={"audit": True},
+        data_dir=data,
+    )
+    try:
+        assert env.workspace_fallback is True
+        assert env.workspace != Path(os.path.realpath(Path.home()))
+        result = env.execute("pwd")
+        assert result["returncode"] == 0, result
+        assert result["output"].strip() == str(env.workspace)
+    finally:
+        env.cleanup()
+
+
 def test_network_denied(tmp_path):
     if not shutil.which("curl"):
         pytest.skip("curl not installed")

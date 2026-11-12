@@ -82,11 +82,18 @@ By default Glassbox:
 - allows reads and writes inside the workspace and a private scratch root;
 - hides `/Users`, `/Volumes`, `/Users/Shared` and `/private/var/root`, then re-allows only
   the workspace;
+- refuses the user's home directory — or any ancestor of it — as the workspace, and
+  falls back to an empty sandbox workspace instead of making the whole home writable;
 - denies credential stores even when `allow_home` is on: `~/.ssh`, `~/.aws`, `~/.gnupg`,
   `~/.kube`, `~/.docker`, `~/.netrc`, `~/.npmrc`, `~/.pypirc`, `~/.config`, `~/.codex`,
   `~/.claude`, `~/.gemini`, `~/.hermes`, keychains, Mail, Messages, Safari, Chrome,
   Firefox, Slack and Discord app data;
-- blocks `osascript`, `open`, `security`, `launchctl`, Apple Events and launchd IPC;
+- denies shell-startup and login persistence paths: `~/.zshrc`, `~/.zprofile`, `~/.zshenv`,
+  `~/.zlogin`, `~/.bashrc`, `~/.bash_profile`, `~/.bash_login`, `~/.profile` and
+  `~/Library/LaunchAgents`;
+- blocks `osascript`, `open`, `security` and `launchctl`, plus Apple Events and
+  LaunchServices IPC, so a copied binary cannot ask launchd to start an app outside
+  the sandbox;
 - drops provider keys, tokens, passwords and SSH agent sockets from the child environment.
 
 ## Configure

@@ -1,7 +1,7 @@
 ---
 name: glassbox
 description: Explain and operate the Glassbox macOS sandbox backend — what is allowed, why a command hit "Operation not permitted", how to read the containment audit, and how to request a policy change. Use when the user asks about sandboxing, blocked file or network access, or the safety of running a command on this Mac.
-version: 1.0.0
+version: 1.1.0
 metadata:
   hermes:
     tags: [security, sandbox, macos, seatbelt, audit]

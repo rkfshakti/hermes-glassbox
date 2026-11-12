@@ -1,5 +1,5 @@
 name: glassbox
-version: 1.0.0
+version: 1.1.0
 manifest_version: 2
 api_version: 1
 kind: backend
@@ -7,8 +7,10 @@ description: >-
   A contained, auditable macOS terminal backend. Every terminal and file-tool command
   runs under a generated Seatbelt profile: the system stays readable, the workspace is
   writable, the rest of the user's home is hidden, and network access is off by default.
-  Blocked filesystem and network attempts are recorded in a local audit log, with
-  `hermes glassbox report` and a self-contained HTML timeline.
+  The home directory itself is never accepted as the workspace; an unsafe launch
+  directory falls back to an empty sandbox workspace. Blocked filesystem and network
+  attempts are recorded in a local audit log, with `hermes glassbox report` and a
+  self-contained HTML timeline.
 author: rkfshakti
 license: MIT
 homepage: https://github.com/rkfshakti/hermes-glassbox

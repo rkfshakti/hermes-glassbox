@@ -56,6 +56,34 @@ _DEFAULT_SECRET_PATHS = (
     "~/Library/Application Support/Discord",
 )
 
+# Files that execute outside the sandbox after the next shell start or login.
+# A writable home would otherwise let a sandboxed command install persistence
+# (edit ~/.zshrc, drop a LaunchAgent) and run later with the user's privileges.
+_PERSISTENCE_PATHS = (
+    "~/.zshrc",
+    "~/.zprofile",
+    "~/.zshenv",
+    "~/.zlogin",
+    "~/.bashrc",
+    "~/.bash_profile",
+    "~/.bash_login",
+    "~/.profile",
+    "~/Library/LaunchAgents",
+)
+
+# IPC paths that hand work to another process outside the sandbox. Blocking the
+# executable by literal path is not enough: a copy in the workspace is a new
+# path, but it still talks to these services.
+_DENIED_MACH_SERVICES = (
+    "com.apple.appleevent",
+    "com.apple.coreservices.appleevents",
+    "com.apple.coreservices.launchservicesd",
+)
+_DENIED_MACH_PREFIXES = (
+    "com.apple.lsd.",
+    "com.apple.launchservices.",
+)
+
 # Environment variables that must never reach a sandboxed command. The environment
 # builder uses an allowlist, but this list is also exported for the provider's
 # ``strip_env_keys`` so Hermes' own secret stripping agrees with ours.
@@ -240,8 +268,10 @@ class SandboxPolicy:
         # otherwise ask Finder or System Events to read a file on its behalf.
         for executable in _BLOCKED_EXECUTABLES:
             lines.append(f"(deny process-exec (literal {_seatbelt_string(executable)}))")
-        for service in ("com.apple.appleevent", "com.apple.coreservices.appleevents"):
+        for service in _DENIED_MACH_SERVICES:
             lines.append(f"(deny mach-lookup (global-name {_seatbelt_string(service)}))")
+        for prefix in _DENIED_MACH_PREFIXES:
+            lines.append(f"(deny mach-lookup (global-name-prefix {_seatbelt_string(prefix)}))")
 
         if self.network:
             lines.append("(allow network*)")
@@ -265,7 +295,7 @@ def build_policy(
     home = _expand("~")
     scratch_path = _expand(scratch) if scratch else _expand(home / ".hermes-glassbox-scratch")
 
-    denied: list[Path] = [_expand(p) for p in _DEFAULT_SECRET_PATHS]
+    denied: list[Path] = [_expand(p) for p in (*_DEFAULT_SECRET_PATHS, *_PERSISTENCE_PATHS)]
     denied.extend(_as_path_list(cfg.get("deny_paths")))
     # Do not drop a deny just because it surrounds the workspace: the renderer
     # orders ancestor denies before the narrow workspace allow and repeats any
