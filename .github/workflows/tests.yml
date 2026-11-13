@@ -5,6 +5,10 @@ on:
     branches: [main]
   pull_request:
 
+# least-privilege CI token: tests only need to read the repo
+permissions:
+  contents: read
+
 jobs:
   macos:
     # Glassbox is a macOS Seatbelt plugin; policy/audit/preflight unit tests run
