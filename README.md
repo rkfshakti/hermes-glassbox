@@ -1,5 +1,11 @@
 # Hermes Glassbox
 
+[![tests](https://img.shields.io/github/actions/workflow/status/rkfshakti/hermes-glassbox/tests.yml?branch=main&label=tests)](https://github.com/rkfshakti/hermes-glassbox/actions/workflows/tests.yml)
+[![license](https://img.shields.io/github/license/rkfshakti/hermes-glassbox)](LICENSE)
+[![plugin v1.1.0](https://img.shields.io/badge/plugin-v1.1.0-blue)](plugin.yaml)
+[![Hermes ≥ 0.22.3](https://img.shields.io/badge/Hermes-%E2%89%A5%200.22.3-8A2BE2)](https://github.com/NousResearch/hermes-agent)
+[![stars](https://img.shields.io/github/stars/rkfshakti/hermes-glassbox?style=social)](https://github.com/rkfshakti/hermes-glassbox/stargazers)
+
 **A contained, auditable terminal backend for macOS.**
 
 Hermes is at its best when it can run commands, edit files and test its own work. That
@@ -214,6 +220,11 @@ hermes plugins validate . --install-deps
 ```
 
 The plugin uses only the Python standard library and the Hermes public plugin APIs.
+
+---
+
+If Glassbox caught something you did not want an agent to touch, a ⭐ helps other
+Hermes users find it: [github.com/rkfshakti/hermes-glassbox](https://github.com/rkfshakti/hermes-glassbox).
 
 ## License
 
